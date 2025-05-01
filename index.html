@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>图片拼接工具 - 最终优化版</title>
+    <title>全能图片拼接工具</title>
     <style>
         * {
             box-sizing: border-box;
@@ -34,7 +34,7 @@
             color: #333;
         }
         
-        /* 上传区域优化 */
+        /* 上传区域 */
         .upload-area {
             border: 2px dashed #4CAF50;
             padding: 30px;
@@ -50,7 +50,7 @@
             background-color: rgba(76,175,80,0.05);
         }
         
-        /* 布局选择器优化 */
+        /* 布局选择器 */
         .layout-selector {
             margin: 15px 0;
             display: grid;
@@ -71,7 +71,7 @@
             color: white;
         }
         
-        /* 图片预览优化 */
+        /* 图片预览 */
         .images-preview {
             display: flex;
             flex-wrap: nowrap;
@@ -92,7 +92,7 @@
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.2s, flex-basis 0.3s;
+            transition: transform 0.2s;
         }
         
         .image-preview:hover {
@@ -129,7 +129,7 @@
             background: rgba(231,76,60,1);
         }
         
-        /* 操作按钮优化 */
+        /* 操作按钮 */
         .controls {
             display: flex;
             flex-direction: column;
@@ -160,7 +160,7 @@
             cursor: not-allowed;
         }
         
-        /* 画布容器优化 */
+        /* 画布容器 */
         .canvas-container {
             margin-top: 20px;
             border-radius: 8px;
@@ -174,6 +174,69 @@
             height: auto;
             display: block;
             background: #f9f9f9;
+        }
+        
+        /* 预览弹窗 */
+        .preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+        
+        .modal-img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+        }
+        
+        /* 长按提示 */
+        .save-guide {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .save-guide.active {
+            opacity: 1;
         }
         
         /* 移动端适配 */
@@ -191,13 +254,15 @@
 </head>
 <body>
     <div class="container">
-        <h1>图片拼接工具</h1>
+        <h1>全能图片拼接工具</h1>
         
+        <!-- 上传区域 -->
         <div class="upload-area" id="uploadArea">
             <p>点击或拖拽图片到此处上传</p>
             <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
         </div>
         
+        <!-- 布局选择 -->
         <div class="layout-selector">
             <label>
                 <input type="radio" name="layout" value="horizontal" checked> 
@@ -207,22 +272,35 @@
                 <input type="radio" name="layout" value="vertical"> 
                 垂直排列
             </label>
+            <label>
+                <input type="radio" name="layout" value="grid"> 
+                网格排列
+            </label>
         </div>
         
-		<div id="wechatTip" style="display:none;">
-		  <p>长按图片保存 → 选择"保存图片"</p>
-		  <img src="wechat-save-guide.png" style="width:200px">
-		</div>
-		
+        <!-- 图片预览 -->
         <div class="images-preview" id="imagesPreview"></div>
         
+        <!-- 操作按钮 -->
         <div class="controls">
             <button id="mergeBtn" disabled>合并图片</button>
             <button id="downloadBtn" disabled>下载图片</button>
         </div>
         
+        <!-- 画布容器 -->
         <div class="canvas-container" id="canvasContainer">
             <canvas id="resultCanvas"></canvas>
+        </div>
+        
+        <!-- 预览弹窗 -->
+        <div class="preview-modal" id="previewModal">
+            <div class="modal-content">
+                <img src="" alt="预览图片" class="modal-img" id="previewImage">
+                <button class="close-btn" id="closePreviewBtn">&times;</button>
+                <div class="save-guide" id="saveGuide">
+                    长按图片保存 → 选择"保存图片"
+                </div>
+            </div>
         </div>
     </div>
 
@@ -243,7 +321,11 @@
             downloadBtn: document.getElementById('downloadBtn'),
             canvasContainer: document.getElementById('canvasContainer'),
             resultCanvas: document.getElementById('resultCanvas'),
-            ctx: document.getElementById('resultCanvas').getContext('2d')
+            ctx: document.getElementById('resultCanvas').getContext('2d'),
+            previewModal: document.getElementById('previewModal'),
+            previewImage: document.getElementById('previewImage'),
+            closePreviewBtn: document.getElementById('closePreviewBtn'),
+            saveGuide: document.getElementById('saveGuide')
         };
 
         // 事件监听初始化
@@ -266,9 +348,70 @@
 
             // 下载按钮
             elements.downloadBtn.addEventListener('click', downloadImage);
+
+            // 关闭预览
+            elements.closePreviewBtn.addEventListener('click', closePreview);
         }
 
-        // 拖拽相关处理
+        // 图片合并逻辑
+        async function mergeImages() {
+            if (state.isProcessing) return;
+            if (state.imageFiles.length < 2) return;
+
+            state.isProcessing = true;
+            elements.mergeBtn.disabled = true;
+
+            try {
+                const layout = document.querySelector('input[name="layout"]:checked').value;
+                const images = await loadImages(state.imageFiles);
+                const canvasSize = calculateCanvasSize(images, layout);
+                
+                setupCanvas(canvasSize);
+                drawImages(images, layout);
+                showPreview();
+            } catch (error) {
+                console.error('图片合并失败:', error);
+                alert('图片处理失败，请重试');
+            } finally {
+                state.isProcessing = false;
+                elements.mergeBtn.disabled = false;
+            }
+        }
+
+        // 显示预览弹窗
+        function showPreview() {
+            elements.previewImage.src = elements.resultCanvas.toDataURL('image/png');
+            elements.previewModal.style.display = 'flex';
+            elements.saveGuide.classList.add('active');
+        }
+
+        // 关闭预览
+        function closePreview() {
+            elements.previewModal.style.display = 'none';
+            elements.saveGuide.classList.remove('active');
+        }
+
+        // 长按保存处理
+        elements.previewImage.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            elements.saveGuide.classList.add('active');
+        });
+
+        elements.previewImage.addEventListener('touchend', (e) => {
+            if (!elements.saveGuide.classList.contains('active')) return;
+            elements.saveGuide.classList.remove('active');
+            triggerDownload();
+        });
+
+        // 触发下载
+        function triggerDownload() {
+            const link = document.createElement('a');
+            link.download = `merged-image-${Date.now()}.png`;
+            link.href = elements.resultCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // 其他辅助函数
         function handleDragOver(e) {
             e.preventDefault();
             elements.uploadArea.style.borderColor = '#4CAF50';
@@ -284,7 +427,6 @@
             handleFiles(e.dataTransfer.files);
         }
 
-        // 文件处理核心逻辑
         function handleFileSelect(e) {
             handleFiles(e.target.files);
         }
@@ -294,7 +436,7 @@
 
             const newFiles = Array.from(files)
                 .filter(file => file.type.startsWith('image/'))
-                .slice(0, 20); // 限制最多20张图片
+                .slice(0, 20);
 
             if (newFiles.length === 0) return;
 
@@ -303,7 +445,6 @@
             checkButtonState();
         }
 
-        // 图片预览更新
         function updatePreview() {
             elements.imagesPreview.innerHTML = '';
             state.activeReaders = state.imageFiles.length;
@@ -349,11 +490,10 @@
         function checkAllImagesLoaded() {
             if (state.activeReaders === 0) {
                 checkButtonState();
-                adjustImageSizes(); // 动态调整尺寸
+                adjustImageSizes();
             }
         }
 
-        // 图片管理功能
         function removeImage(index) {
             state.imageFiles.splice(index, 1);
             updatePreview();
@@ -363,49 +503,6 @@
         function checkButtonState() {
             elements.mergeBtn.disabled = state.imageFiles.length < 2;
             elements.downloadBtn.disabled = state.imageFiles.length < 2;
-        }
-
-        // 动态调整图片尺寸
-        function adjustImageSizes() {
-            const container = elements.imagesPreview;
-            const images = container.querySelectorAll('.image-preview');
-            if (images.length === 0) return;
-
-            const containerWidth = container.clientWidth;
-            const totalGap = 10 * (images.length - 1);
-            const availableWidth = containerWidth - totalGap;
-            const baseSize = Math.max(80, Math.floor(availableWidth / images.length));
-
-            images.forEach(img => {
-                img.style.flexBasis = `${baseSize}px`;
-                img.style.minWidth = `${baseSize}px`;
-                img.style.maxWidth = `${baseSize}px`;
-            });
-        }
-
-        // 图片合并逻辑（保持原核心代码）
-        async function mergeImages() {
-            if (state.isProcessing) return;
-            if (state.imageFiles.length < 2) return;
-
-            state.isProcessing = true;
-            elements.mergeBtn.disabled = true;
-
-            try {
-                const layout = document.querySelector('input[name="layout"]:checked').value;
-                const images = await loadImages(state.imageFiles);
-                const canvasSize = calculateCanvasSize(images, layout);
-                
-                setupCanvas(canvasSize);
-                drawImages(images, layout);
-                showCanvas();
-            } catch (error) {
-                console.error('图片合并失败:', error);
-                alert('图片处理失败，请重试');
-            } finally {
-                state.isProcessing = false;
-                elements.mergeBtn.disabled = false;
-            }
         }
 
         function loadImages(files) {
@@ -430,7 +527,7 @@
                     width: Math.max(...images.map(img => img.width)),
                     height: images.reduce((sum, img) => sum + img.height, 0)
                 };
-            } else { // grid
+            } else {
                 const cols = Math.ceil(Math.sqrt(images.length));
                 const maxWidth = Math.max(...images.map(img => img.width));
                 const maxHeight = Math.max(...images.map(img => img.height));
@@ -492,33 +589,12 @@
             });
         }
 
-        function showCanvas() {
-            elements.canvasContainer.style.display = 'block';
-            elements.downloadBtn.disabled = false;
-        }
-
-        // 下载功能
-        function downloadImage() {
-              const link = document.createElement('a');
-			  link.download = 'merged-image.png';
-			  
-			  // 使用完整URL代替Data URL
-			  link.href = resultCanvas.toDataURL('image/png').replace('data:image/png;base64,', '');
-			  
-			  // 微信需要用户手动触发
-			  document.body.appendChild(link);
-			  link.click();
-			  document.body.removeChild(link);
-        }
-
         // 初始化
         function init() {
             initEventListeners();
             window.addEventListener('resize', adjustImageSizes);
             checkButtonState();
         }
-		
-		
 
         // 启动应用
         init();
