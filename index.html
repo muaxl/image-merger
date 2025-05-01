@@ -3,8 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>图片拖拽排序拼接工具</title>
+    <title>图片拼接工具</title>
     <style>
+		
+		.canvas-container {
+            display: none !important; /* 添加!important确保优先级 */
+            position: absolute !important;
+            left: -9999px !important; /* 双重保险，确保不在可视区域 */
+            width: 1px !important;
+            height: 1px !important;
+            overflow: hidden !important;
+        }
+		
         :root {
             --primary-color: #6C5CE7;
             --secondary-color: #A29BFE;
@@ -56,7 +66,7 @@
             background: rgba(162, 155, 254, 0.05);
             min-height: 150px;
             display: flex;
-            flex-wrap: wrap;
+            //flex-wrap: wrap;
             gap: 10px;
             align-content: flex-start;
             position: relative;
@@ -100,10 +110,18 @@
         }
 
         .uploaded-image.dragging {
-            z-index: 10;
+            z-index: 100;
             transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            opacity: 0.8;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            opacity: 0.9;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        /* 新增：拖拽占位虚影 */
+        .uploaded-image.placeholder {
+            background: rgba(162, 155, 254, 0.3);
+            border: 2px dashed var(--primary-color);
+            box-shadow: none;
         }
 
         .uploaded-image img {
@@ -171,7 +189,7 @@
             display: flex;
             gap: 15px;
             justify-content: center;
-            max-width: 400px;
+            max-width: 1200px;
         }
 
         .layout-selector label {
@@ -184,7 +202,7 @@
             border: 1px solid #eee;
             font-weight: 500;
             flex: 1;
-            max-width: 180px;
+            max-width: 550px;
         }
 
         .layout-selector input:checked + label {
@@ -308,8 +326,8 @@
             }
 
             .layout-selector {
-                flex-direction: column;
-                max-width: 300px;
+                //flex-direction: column;
+                //max-width: 500px;
             }
 
             .layout-selector label {
@@ -321,7 +339,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>图片拖拽排序拼接工具</h1>
+        <h1>图片拼接工具</h1>
         
         <!-- 上传区域 -->
         <div class="upload-area empty" id="uploadArea">
@@ -348,10 +366,10 @@
                 <span class="icon">🖼️</span>
                 合并图片
             </button>
-            <button id="downloadBtn" disabled>
+            <!--<button id="downloadBtn" disabled>
                 <span class="icon">⬇️</span>
                 下载图片
-            </button>
+            </button>-->
         </div>
         
         <!-- 结果展示区域 -->
@@ -360,7 +378,7 @@
         </div>
         
         <!-- 画布容器（隐藏） -->
-        <div class="canvas-container" id="canvasContainer">
+        <div class="canvas-container" id="canvasContainer" hidden>
             <div class="loader" id="loader">
                 <div class="loader-spinner"></div>
                 <div class="loader-text">正在处理图片...</div>
@@ -380,7 +398,8 @@
             draggedIndex: -1,
             placeholder: null,
             dragStartX: 0,
-            dragStartY: 0
+            dragStartY: 0,
+            currentDragOver: null
         };
 
         // DOM元素引用
@@ -408,23 +427,24 @@
             document.addEventListener('mouseup', endDrag);
             document.addEventListener('touchend', endDrag);
             
-            // 创建拖拽占位元素
+            // 创建拖拽占位虚影
             state.placeholder = document.createElement('div');
-            state.placeholder.className = 'uploaded-image';
-            state.placeholder.style.visibility = 'hidden';
+            state.placeholder.className = 'uploaded-image placeholder';
+            state.placeholder.style.opacity = '0';
+            state.placeholder.style.transition = 'opacity 0.2s';
         }
 
         function startDrag(e) {
             // 只处理图片项的拖拽
             const target = e.target.closest('.uploaded-image');
-            if (!target) return;
+            if (!target || target.classList.contains('placeholder')) return;
             
             e.preventDefault();
             
             // 设置拖拽状态
             state.draggedItem = target;
             state.draggedIndex = Array.from(elements.uploadArea.children)
-                .filter(el => el.classList.contains('uploaded-image'))
+                .filter(el => el.classList.contains('uploaded-image') && !el.classList.contains('placeholder'))
                 .indexOf(target);
             
             // 记录初始位置
@@ -440,8 +460,12 @@
             target.classList.add('dragging');
             target.style.position = 'absolute';
             target.style.zIndex = '1000';
+            target.style.width = target.offsetWidth + 'px';
+            target.style.height = target.offsetHeight + 'px';
             
-            // 添加占位元素
+            // 初始化占位虚影
+            state.placeholder.style.width = target.offsetWidth + 'px';
+            state.placeholder.style.height = target.offsetHeight + 'px';
             elements.uploadArea.insertBefore(state.placeholder, target.nextSibling);
         }
 
@@ -463,27 +487,47 @@
             state.draggedItem.style.left = (clientX - state.dragStartX) + 'px';
             state.draggedItem.style.top = (clientY - state.dragStartY) + 'px';
             
-            // 计算新的插入位置
-            const items = Array.from(elements.uploadArea.querySelectorAll('.uploaded-image:not(.dragging)'));
-            const closest = items.reduce((closest, child, index) => {
+            // 隐藏之前的悬停指示
+            if (state.currentDragOver) {
+                state.currentDragOver.classList.remove('drag-over');
+            }
+            
+            // 查找最近的拖放目标
+            const items = Array.from(elements.uploadArea.querySelectorAll('.uploaded-image:not(.dragging):not(.placeholder)'));
+            const closest = items.reduce((closest, child) => {
                 const box = child.getBoundingClientRect();
-                const offsetY = clientY - box.top - box.height / 2;
+                const horizontalDistance = Math.abs(clientX - (box.left + box.width / 2));
+                const verticalDistance = Math.abs(clientY - (box.top + box.height / 2));
+                const distance = Math.sqrt(horizontalDistance * horizontalDistance + verticalDistance * verticalDistance);
                 
-                if (offsetY < 0 && offsetY > closest.offsetY) {
-                    return { offsetY: offsetY, element: child, index: index };
+                if (distance < closest.distance) {
+                    return { distance: distance, element: child };
                 } else {
                     return closest;
                 }
-            }, { offsetY: Number.NEGATIVE_INFINITY });
+            }, { distance: Number.POSITIVE_INFINITY });
             
-            // 更新占位元素位置
-            if (closest.element) {
-                const newIndex = closest.index;
-                const currentIndex = Array.from(elements.uploadArea.children).indexOf(state.placeholder);
+            // 更新占位虚影位置
+            if (closest.element && closest.distance < 100) { // 有效距离阈值
+                const rect = closest.element.getBoundingClientRect();
+                const isBefore = clientY < rect.top + rect.height / 2;
                 
-                if (newIndex !== currentIndex) {
+                // 高亮当前悬停位置
+                closest.element.classList.add('drag-over');
+                state.currentDragOver = closest.element;
+                
+                // 移动占位虚影
+                if (isBefore) {
                     elements.uploadArea.insertBefore(state.placeholder, closest.element);
+                } else {
+                    elements.uploadArea.insertBefore(state.placeholder, closest.element.nextSibling);
                 }
+                
+                // 显示占位虚影
+                state.placeholder.style.opacity = '1';
+            } else {
+                // 没有有效目标时隐藏占位虚影
+                state.placeholder.style.opacity = '0';
             }
         }
 
@@ -496,21 +540,34 @@
             state.draggedItem.style.left = '';
             state.draggedItem.style.top = '';
             state.draggedItem.style.zIndex = '';
+            state.draggedItem.style.width = '';
+            state.draggedItem.style.height = '';
             
-            // 将拖拽元素插入到占位元素位置
-            if (state.placeholder.parentNode) {
-                const newIndex = Array.from(elements.uploadArea.children).indexOf(state.placeholder);
-                elements.uploadArea.insertBefore(state.draggedItem, state.placeholder);
+            // 移除悬停指示
+            if (state.currentDragOver) {
+                state.currentDragOver.classList.remove('drag-over');
+                state.currentDragOver = null;
+            }
+            
+            // 如果有有效的占位位置，则移动元素
+            if (state.placeholder.style.opacity === '1' && state.placeholder.parentNode) {
+                const newIndex = Array.from(elements.uploadArea.children)
+                    .filter(el => el.classList.contains('uploaded-image') && !el.classList.contains('placeholder'))
+                    .indexOf(state.placeholder);
                 
                 // 更新文件顺序
-                if (newIndex !== state.draggedIndex) {
+                if (newIndex !== -1 && newIndex !== state.draggedIndex) {
+                    const adjustedNewIndex = newIndex > state.draggedIndex ? newIndex - 1 : newIndex;
                     const file = state.imageFiles[state.draggedIndex];
                     state.imageFiles.splice(state.draggedIndex, 1);
-                    state.imageFiles.splice(newIndex > state.draggedIndex ? newIndex - 1 : newIndex, 0, file);
+                    state.imageFiles.splice(adjustedNewIndex, 0, file);
+                    
+                    // 重新渲染缩略图
+                    updateUploadArea();
                 }
             }
             
-            // 移除占位元素
+            // 移除占位虚影
             if (state.placeholder.parentNode) {
                 elements.uploadArea.removeChild(state.placeholder);
             }
@@ -518,6 +575,7 @@
             // 重置状态
             state.draggedItem = null;
             state.draggedIndex = -1;
+            state.placeholder.style.opacity = '0';
         }
 
         // 事件监听初始化
@@ -701,8 +759,8 @@
                 showResult();
                 checkButtonState();
             } catch (error) {
-                console.error('图片合并失败:', error);
-                alert('图片处理失败，请尝试减少图片数量或尺寸');
+                //console.error('图片合并失败:', error);
+                //alert('图片处理失败，请尝试减少图片数量或尺寸');
             } finally {
                 state.isProcessing = false;
                 elements.loader.style.display = 'none';
