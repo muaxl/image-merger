@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>图片拼接工具 - 最终修复版</title>
+    <title>图片拼接工具 - 最终优化版</title>
     <style>
         * {
             box-sizing: border-box;
@@ -73,19 +73,30 @@
         
         /* 图片预览优化 */
         .images-preview {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            gap: 8px;
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 10px;
             margin-bottom: 20px;
-            flex-wrap: wrap;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            min-height: 160px;
+            scroll-behavior: smooth;
         }
         
         .image-preview {
             position: relative;
+            flex: 0 0 auto;
+            min-width: 80px;
+            max-width: 160px;
             aspect-ratio: 1;
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s, flex-basis 0.3s;
+        }
+        
+        .image-preview:hover {
+            transform: translateY(-5px);
         }
         
         .image-preview img {
@@ -96,8 +107,8 @@
         
         .remove-btn {
             position: absolute;
-            top: 4px;
-            right: 4px;
+            top: 8px;
+            right: 8px;
             width: 24px;
             height: 24px;
             background: rgba(231,76,60,0.8);
@@ -111,6 +122,11 @@
             cursor: pointer;
             padding: 0;
             z-index: 10;
+            transition: background 0.2s;
+        }
+        
+        .remove-btn:hover {
+            background: rgba(231,76,60,1);
         }
         
         /* 操作按钮优化 */
@@ -166,13 +182,9 @@
                 padding: 15px;
             }
             
-            .layout-selector label {
-                padding: 10px;
-                font-size: 0.9rem;
-            }
-            
             .image-preview {
-                aspect-ratio: 0.8;
+                min-width: 60px;
+                max-width: 120px;
             }
         }
     </style>
@@ -336,6 +348,7 @@
         function checkAllImagesLoaded() {
             if (state.activeReaders === 0) {
                 checkButtonState();
+                adjustImageSizes(); // 动态调整尺寸
             }
         }
 
@@ -351,7 +364,25 @@
             elements.downloadBtn.disabled = state.imageFiles.length < 2;
         }
 
-        // 图片合并逻辑
+        // 动态调整图片尺寸
+        function adjustImageSizes() {
+            const container = elements.imagesPreview;
+            const images = container.querySelectorAll('.image-preview');
+            if (images.length === 0) return;
+
+            const containerWidth = container.clientWidth;
+            const totalGap = 10 * (images.length - 1);
+            const availableWidth = containerWidth - totalGap;
+            const baseSize = Math.max(80, Math.floor(availableWidth / images.length));
+
+            images.forEach(img => {
+                img.style.flexBasis = `${baseSize}px`;
+                img.style.minWidth = `${baseSize}px`;
+                img.style.maxWidth = `${baseSize}px`;
+            });
+        }
+
+        // 图片合并逻辑（保持原核心代码）
         async function mergeImages() {
             if (state.isProcessing) return;
             if (state.imageFiles.length < 2) return;
@@ -476,6 +507,7 @@
         // 初始化
         function init() {
             initEventListeners();
+            window.addEventListener('resize', adjustImageSizes);
             checkButtonState();
         }
 
