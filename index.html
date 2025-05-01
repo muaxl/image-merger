@@ -2,89 +2,178 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片拼接工具</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>图片拼接工具 - 最终修复版</title>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            padding: 15px;
+            background: #f8f9fa;
         }
+        
         .container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .upload-area {
-            border: 2px dashed #ccc;
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             padding: 20px;
+        }
+        
+        h1 {
             text-align: center;
+            margin: 20px 0;
+            font-size: 1.5rem;
+            color: #333;
+        }
+        
+        /* 上传区域优化 */
+        .upload-area {
+            border: 2px dashed #4CAF50;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
             cursor: pointer;
+            touch-action: manipulation;
         }
+        
         .upload-area:hover {
-            border-color: #aaa;
+            background-color: rgba(76,175,80,0.05);
         }
+        
+        /* 布局选择器优化 */
+        .layout-selector {
+            margin: 15px 0;
+            display: grid;
+            gap: 12px;
+        }
+        
+        .layout-selector label {
+            padding: 12px;
+            background: #f1f3f4;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .layout-selector input:checked + label {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        /* 图片预览优化 */
         .images-preview {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 8px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
-            gap: 10px;
         }
+        
         .image-preview {
             position: relative;
-            width: 150px;
-            height: 150px;
-            border: 1px solid #ddd;
+            aspect-ratio: 1;
+            border-radius: 8px;
             overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+        
         .image-preview img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
+        
         .remove-btn {
             position: absolute;
-            top: 5px;
-            right: 5px;
-            background: red;
+            top: 4px;
+            right: 4px;
+            width: 24px;
+            height: 24px;
+            background: rgba(231,76,60,0.8);
             color: white;
             border: none;
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 12px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
+            padding: 0;
+            z-index: 10;
         }
-        .canvas-container {
-            margin-top: 20px;
-            border: 1px solid #ddd;
-            display: none;
-        }
-        canvas {
-            max-width: 100%;
-            background: #f9f9f9;
-        }
+        
+        /* 操作按钮优化 */
         .controls {
             display: flex;
-            gap: 10px;
-            margin-top: 10px;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
         }
+        
         button {
-            padding: 8px 16px;
+            padding: 16px;
             background: #4CAF50;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
+            font-size: 1rem;
             cursor: pointer;
+            transition: all 0.2s;
+            min-height: 48px;
+            font-weight: 500;
         }
+        
         button:hover {
-            background: #45a049;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .layout-selector {
-            margin-top: 10px;
+        
+        button:disabled {
+            background: #9E9E9E;
+            cursor: not-allowed;
         }
-        label {
-            margin-right: 10px;
+        
+        /* 画布容器优化 */
+        .canvas-container {
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+            background: #f9f9f9;
+        }
+        
+        /* 移动端适配 */
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .layout-selector label {
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+            
+            .image-preview {
+                aspect-ratio: 0.8;
+            }
         }
     </style>
 </head>
@@ -99,13 +188,16 @@
         
         <div class="layout-selector">
             <label>
-                <input type="radio" name="layout" value="horizontal" checked> 水平排列
+                <input type="radio" name="layout" value="horizontal" checked> 
+                水平排列
             </label>
             <label>
-                <input type="radio" name="layout" value="vertical"> 垂直排列
+                <input type="radio" name="layout" value="vertical"> 
+                垂直排列
             </label>
             <label>
-                <input type="radio" name="layout" value="grid"> 网格排列
+                <input type="radio" name="layout" value="grid"> 
+                网格排列
             </label>
         </div>
         
@@ -122,238 +214,273 @@
     </div>
 
     <script>
-        // 全局变量
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const imagesPreview = document.getElementById('imagesPreview');
-        const mergeBtn = document.getElementById('mergeBtn');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const canvasContainer = document.getElementById('canvasContainer');
-        const resultCanvas = document.getElementById('resultCanvas');
-        const ctx = resultCanvas.getContext('2d');
-        
-        let imageFiles = [];
-        
-        // 点击上传区域触发文件选择
-        uploadArea.addEventListener('click', () => {
-            fileInput.click();
-        });
-        
-        // 拖拽上传功能
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.style.borderColor = '#4CAF50';
-        });
-        
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.style.borderColor = '#ccc';
-        });
-        
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.style.borderColor = '#ccc';
-            
-            if (e.dataTransfer.files.length > 0) {
-                handleFiles(e.dataTransfer.files);
-            }
-        });
-        
-        // 文件选择处理
-        fileInput.addEventListener('change', () => {
-            if (fileInput.files.length > 0) {
-                handleFiles(fileInput.files);
-            }
-        });
-        
-        // 处理上传的文件
-        function handleFiles(files) {
-            // 过滤出图片文件
-            const newFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-            
-            if (newFiles.length === 0) {
-                alert('请选择图片文件！');
-                return;
-            }
-            
-            // 添加到图片列表
-            imageFiles = [...imageFiles, ...newFiles];
-            
-            // 更新预览
-            updatePreview();
-            
-            // 启用合并按钮
-            if (imageFiles.length > 1) {
-                mergeBtn.disabled = false;
-            }
+        // 全局状态管理
+        const state = {
+            imageFiles: [],
+            activeReaders: 0,
+            isProcessing: false
+        };
+
+        // DOM元素引用
+        const elements = {
+            uploadArea: document.getElementById('uploadArea'),
+            fileInput: document.getElementById('fileInput'),
+            imagesPreview: document.getElementById('imagesPreview'),
+            mergeBtn: document.getElementById('mergeBtn'),
+            downloadBtn: document.getElementById('downloadBtn'),
+            canvasContainer: document.getElementById('canvasContainer'),
+            resultCanvas: document.getElementById('resultCanvas'),
+            ctx: document.getElementById('resultCanvas').getContext('2d')
+        };
+
+        // 事件监听初始化
+        function initEventListeners() {
+            // 上传区域点击
+            elements.uploadArea.addEventListener('click', () => {
+                elements.fileInput.click();
+            });
+
+            // 拖拽上传
+            elements.uploadArea.addEventListener('dragover', handleDragOver);
+            elements.uploadArea.addEventListener('dragleave', handleDragLeave);
+            elements.uploadArea.addEventListener('drop', handleFileDrop);
+
+            // 文件选择
+            elements.fileInput.addEventListener('change', handleFileSelect);
+
+            // 合并按钮
+            elements.mergeBtn.addEventListener('click', mergeImages);
+
+            // 下载按钮
+            elements.downloadBtn.addEventListener('click', downloadImage);
         }
-        
-        // 更新预览区域
+
+        // 拖拽相关处理
+        function handleDragOver(e) {
+            e.preventDefault();
+            elements.uploadArea.style.borderColor = '#4CAF50';
+        }
+
+        function handleDragLeave() {
+            elements.uploadArea.style.borderColor = '#ccc';
+        }
+
+        function handleFileDrop(e) {
+            e.preventDefault();
+            elements.uploadArea.style.borderColor = '#ccc';
+            handleFiles(e.dataTransfer.files);
+        }
+
+        // 文件处理核心逻辑
+        function handleFileSelect(e) {
+            handleFiles(e.target.files);
+        }
+
+        function handleFiles(files) {
+            if (state.isProcessing) return;
+
+            const newFiles = Array.from(files)
+                .filter(file => file.type.startsWith('image/'))
+                .slice(0, 20); // 限制最多20张图片
+
+            if (newFiles.length === 0) return;
+
+            state.imageFiles = [...state.imageFiles, ...newFiles];
+            updatePreview();
+            checkButtonState();
+        }
+
+        // 图片预览更新
         function updatePreview() {
-            imagesPreview.innerHTML = '';
-            
-            imageFiles.forEach((file, index) => {
+            elements.imagesPreview.innerHTML = '';
+            state.activeReaders = state.imageFiles.length;
+
+            state.imageFiles.forEach((file, index) => {
                 const reader = new FileReader();
                 
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    
-                    const previewDiv = document.createElement('div');
-                    previewDiv.className = 'image-preview';
-                    previewDiv.dataset.index = index;
-                    
-                    const removeBtn = document.createElement('button');
-                    removeBtn.className = 'remove-btn';
-                    removeBtn.innerHTML = '&times;';
-                    removeBtn.addEventListener('click', () => {
-                        imageFiles.splice(index, 1);
-                        updatePreview();
-                        
-                        if (imageFiles.length < 2) {
-                            mergeBtn.disabled = true;
-                            downloadBtn.disabled = true;
-                            canvasContainer.style.display = 'none';
-                        }
-                    });
-                    
-                    previewDiv.appendChild(img);
-                    previewDiv.appendChild(removeBtn);
-                    imagesPreview.appendChild(previewDiv);
+                reader.onload = (e) => {
+                    state.activeReaders--;
+                    createImagePreview(e.target.result, index);
+                    checkAllImagesLoaded();
                 };
-                
+
+                reader.onerror = () => {
+                    state.activeReaders--;
+                    console.error(`图片加载失败: ${file.name}`);
+                    checkAllImagesLoaded();
+                };
+
                 reader.readAsDataURL(file);
             });
         }
-        
-        // 合并图片
-        mergeBtn.addEventListener('click', () => {
-            if (imageFiles.length < 2) {
-                alert('请至少上传两张图片！');
-                return;
+
+        function createImagePreview(dataUrl, index) {
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'image-preview';
+            previewDiv.dataset.index = index;
+
+            const img = new Image();
+            img.src = dataUrl;
+            img.alt = `预览 ${index + 1}`;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.innerHTML = '&times;';
+            removeBtn.addEventListener('click', () => removeImage(index));
+
+            previewDiv.appendChild(img);
+            previewDiv.appendChild(removeBtn);
+            elements.imagesPreview.appendChild(previewDiv);
+        }
+
+        function checkAllImagesLoaded() {
+            if (state.activeReaders === 0) {
+                checkButtonState();
             }
-            
-            const layout = document.querySelector('input[name="layout"]:checked').value;
-            mergeImages(layout);
-        });
-        
-        // 下载合并后的图片
-        downloadBtn.addEventListener('click', () => {
-            const link = document.createElement('a');
-            link.download = 'merged-image.png';
-            link.href = resultCanvas.toDataURL('image/png');
-            link.click();
-        });
-        
+        }
+
+        // 图片管理功能
+        function removeImage(index) {
+            state.imageFiles.splice(index, 1);
+            updatePreview();
+            checkButtonState();
+        }
+
+        function checkButtonState() {
+            elements.mergeBtn.disabled = state.imageFiles.length < 2;
+            elements.downloadBtn.disabled = state.imageFiles.length < 2;
+        }
+
         // 图片合并逻辑
-        function mergeImages(layout) {
-            // 创建临时Image对象用于获取尺寸
-            const tempImages = imageFiles.map(file => {
-                const img = new Image();
-                img.src = URL.createObjectURL(file);
-                return img;
-            });
+        async function mergeImages() {
+            if (state.isProcessing) return;
+            if (state.imageFiles.length < 2) return;
+
+            state.isProcessing = true;
+            elements.mergeBtn.disabled = true;
+
+            try {
+                const layout = document.querySelector('input[name="layout"]:checked').value;
+                const images = await loadImages(state.imageFiles);
+                const canvasSize = calculateCanvasSize(images, layout);
+                
+                setupCanvas(canvasSize);
+                drawImages(images, layout);
+                showCanvas();
+            } catch (error) {
+                console.error('图片合并失败:', error);
+                alert('图片处理失败，请重试');
+            } finally {
+                state.isProcessing = false;
+                elements.mergeBtn.disabled = false;
+            }
+        }
+
+        function loadImages(files) {
+            return Promise.all(files.map(file => {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.src = URL.createObjectURL(file);
+                    img.onload = () => resolve(img);
+                    img.onerror = () => reject(new Error(`图片加载失败: ${file.name}`));
+                });
+            }));
+        }
+
+        function calculateCanvasSize(images, layout) {
+            if (layout === 'horizontal') {
+                return {
+                    width: images.reduce((sum, img) => sum + img.width, 0),
+                    height: Math.max(...images.map(img => img.height))
+                };
+            } else if (layout === 'vertical') {
+                return {
+                    width: Math.max(...images.map(img => img.width)),
+                    height: images.reduce((sum, img) => sum + img.height, 0)
+                };
+            } else { // grid
+                const cols = Math.ceil(Math.sqrt(images.length));
+                const maxWidth = Math.max(...images.map(img => img.width));
+                const maxHeight = Math.max(...images.map(img => img.height));
+                return {
+                    width: cols * maxWidth,
+                    height: cols * maxHeight
+                };
+            }
+        }
+
+        function setupCanvas(size) {
+            elements.resultCanvas.width = size.width;
+            elements.resultCanvas.height = size.height;
+            elements.canvasContainer.style.display = 'block';
+        }
+
+        function drawImages(images, layout) {
+            elements.ctx.clearRect(0, 0, elements.resultCanvas.width, elements.resultCanvas.height);
             
-            // 等待所有图片加载完成
-            Promise.all(tempImages.map(img => {
-                return new Promise(resolve => {
-                    img.onload = resolve;
-                });
-            })).then(() => {
-                let canvasWidth = 0;
-                let canvasHeight = 0;
-                const images = tempImages.map(img => {
-                    URL.revokeObjectURL(img.src); // 释放内存
-                    return img;
-                });
-                
-                // 根据布局计算画布大小
-                if (layout === 'horizontal') {
-                    // 水平排列：宽度为所有图片宽度之和，高度为最高图片的高度
-                    canvasHeight = Math.max(...images.map(img => img.height));
-                    canvasWidth = images.reduce((sum, img) => sum + img.width, 0);
-                } else if (layout === 'vertical') {
-                    // 垂直排列：高度为所有图片高度之和，宽度为最宽图片的宽度
-                    canvasWidth = Math.max(...images.map(img => img.width));
-                    canvasHeight = images.reduce((sum, img) => sum + img.height, 0);
-                } else if (layout === 'grid') {
-                    // 网格排列：尝试创建接近正方形的网格
-                    const cols = Math.ceil(Math.sqrt(images.length));
-                    const rows = Math.ceil(images.length / cols);
-                    
-                    // 计算每个单元格的最大尺寸
-                    let maxWidth = 0;
-                    let maxHeight = 0;
-                    
-                    images.forEach(img => {
-                        if (img.width > maxWidth) maxWidth = img.width;
-                        if (img.height > maxHeight) maxHeight = img.height;
-                    });
-                    
-                    // 计算画布大小
-                    const cellWidth = maxWidth;
-                    const cellHeight = maxHeight;
-                    
-                    canvasWidth = cols * cellWidth;
-                    canvasHeight = rows * cellHeight;
-                }
-                
-                // 设置canvas尺寸
-                resultCanvas.width = canvasWidth;
-                resultCanvas.height = canvasHeight;
-                
-                // 清空canvas
-                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-                
-                // 绘制图片
-                if (layout === 'horizontal') {
-                    let x = 0;
-                    images.forEach(img => {
-                        ctx.drawImage(img, x, 0, img.width, img.height);
-                        x += img.width;
-                    });
-                } else if (layout === 'vertical') {
-                    let y = 0;
-                    images.forEach(img => {
-                        ctx.drawImage(img, 0, y, img.width, img.height);
-                        y += img.height;
-                    });
-                } else if (layout === 'grid') {
-                    const cols = Math.ceil(Math.sqrt(images.length));
-                    const rows = Math.ceil(images.length / cols);
-                    
-                    let currentRow = 0;
-                    let currentCol = 0;
-                    
-                    images.forEach((img, index) => {
-                        // 计算缩放比例以适应单元格
-                        const scale = Math.min(
-                            canvasWidth / cols / img.width,
-                            canvasHeight / rows / img.height
-                        );
-                        
-                        const scaledWidth = img.width * scale;
-                        const scaledHeight = img.height * scale;
-                        
-                        // 计算位置
-                        const x = currentCol * (canvasWidth / cols) + (canvasWidth / cols - scaledWidth) / 2;
-                        const y = currentRow * (canvasHeight / rows) + (canvasHeight / rows - scaledHeight) / 2;
-                        
-                        // 绘制图片
-                        ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-                        
-                        currentCol++;
-                        if (currentCol >= cols) {
-                            currentCol = 0;
-                            currentRow++;
-                        }
-                    });
-                }
-                
-                // 显示canvas并启用下载按钮
-                canvasContainer.style.display = 'block';
-                downloadBtn.disabled = false;
+            if (layout === 'horizontal') {
+                drawHorizontal(images);
+            } else if (layout === 'vertical') {
+                drawVertical(images);
+            } else {
+                drawGrid(images);
+            }
+        }
+
+        function drawHorizontal(images) {
+            let x = 0;
+            images.forEach(img => {
+                elements.ctx.drawImage(img, x, 0, img.width, img.height);
+                x += img.width;
             });
         }
+
+        function drawVertical(images) {
+            let y = 0;
+            images.forEach(img => {
+                elements.ctx.drawImage(img, 0, y, img.width, img.height);
+                y += img.height;
+            });
+        }
+
+        function drawGrid(images) {
+            const cols = Math.ceil(Math.sqrt(images.length));
+            const cellWidth = elements.resultCanvas.width / cols;
+            
+            images.forEach((img, index) => {
+                const row = Math.floor(index / cols);
+                const col = index % cols;
+                elements.ctx.drawImage(
+                    img,
+                    col * cellWidth,
+                    row * cellWidth,
+                    cellWidth,
+                    cellWidth
+                );
+            });
+        }
+
+        function showCanvas() {
+            elements.canvasContainer.style.display = 'block';
+            elements.downloadBtn.disabled = false;
+        }
+
+        // 下载功能
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = `merged-image-${Date.now()}.png`;
+            link.href = elements.resultCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // 初始化
+        function init() {
+            initEventListeners();
+            checkButtonState();
+        }
+
+        // 启动应用
+        init();
     </script>
 </body>
 </html>
