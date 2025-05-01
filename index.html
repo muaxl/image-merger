@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>支持拖拽预览的图片拼接工具</title>
+    <title>图片拖拽排序拼接工具</title>
     <style>
         :root {
             --primary-color: #6C5CE7;
@@ -46,27 +46,26 @@
             font-weight: 600;
         }
 
-        /* 上传区域 */
+        /* 上传区域 - 修改为可拖拽排序 */
         .upload-area {
             border: 2px dashed var(--secondary-color);
-            padding: 20px;
-            text-align: center;
+            padding: 15px;
             border-radius: 12px;
             margin-bottom: 25px;
             transition: all 0.3s ease;
-            cursor: pointer;
             background: rgba(162, 155, 254, 0.05);
-            position: relative;
             min-height: 150px;
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
-            justify-content: center;
-            align-items: center;
+            align-content: flex-start;
+            position: relative;
         }
 
         .upload-area.empty {
             flex-direction: column;
+            justify-content: center;
+            align-items: center;
             padding: 40px 20px;
         }
 
@@ -84,6 +83,86 @@
         .upload-area:hover {
             background: rgba(162, 155, 254, 0.1);
             border-color: var(--primary-color);
+        }
+
+        /* 上传图片项 - 添加拖拽样式 */
+        .uploaded-image {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            cursor: move;
+            user-select: none;
+            touch-action: none;
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+
+        .uploaded-image.dragging {
+            z-index: 10;
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            opacity: 0.8;
+        }
+
+        .uploaded-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+
+        /* 结果展示区域 */
+        .result-area {
+            border: 2px solid var(--secondary-color);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 25px;
+            background: rgba(162, 155, 254, 0.05);
+            min-height: 150px;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .result-area.has-result {
+            display: flex;
+        }
+
+        .result-image {
+            max-width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        /* 移除按钮 */
+        .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 24px;
+            height: 24px;
+            background: rgba(253, 121, 168, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 0;
+            z-index: 10;
+            line-height: 1;
+        }
+
+        .remove-btn:hover {
+            background: var(--accent-color);
+            transform: scale(1.1);
         }
 
         /* 布局选择器 */
@@ -113,48 +192,6 @@
             color: white;
             border-color: var(--primary-color);
             box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
-        }
-
-        /* 上传图片预览 */
-        .uploaded-image {
-            position: relative;
-            width: 80px;
-            height: 80px;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-        }
-
-        .uploaded-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* 修复后的关闭按钮 */
-        .remove-btn {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            width: 24px;
-            height: 24px;
-            background: rgba(253, 121, 168, 0.9);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            padding: 0;
-            z-index: 10;
-            line-height: 1;
-        }
-
-        .remove-btn:hover {
-            background: var(--accent-color);
-            transform: scale(1.1);
         }
 
         /* 操作按钮 */
@@ -216,93 +253,6 @@
             height: auto;
             display: block;
             background: #f9f9f9;
-        }
-
-        /* 预览弹窗 - 新增拖拽样式 */
-        .preview-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(45, 52, 54, 0.9);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            touch-action: none;
-        }
-
-        .modal-content {
-            max-width: 90%;
-            max-height: 90%;
-            position: relative;
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        .modal-img {
-            max-width: 100%;
-            max-height: 80vh;
-            object-fit: contain;
-            display: block;
-            cursor: grab;
-            transition: transform 0.1s, box-shadow 0.2s;
-            touch-action: none;
-        }
-
-        .modal-img.dragging {
-            cursor: grabbing;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            width: 40px;
-            height: 40px;
-            background: rgba(253, 121, 168, 0.9);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1001;
-            cursor: pointer;
-            transition: all 0.2s;
-            padding: 0;
-            line-height: 1;
-        }
-
-        .close-btn:hover {
-            background: var(--accent-color);
-            transform: scale(1.1);
-        }
-
-        /* 长按提示 */
-        .save-guide {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 24px;
-            font-size: 15px;
-            text-align: center;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-
-        .save-guide.active {
-            opacity: 1;
         }
 
         /* 加载动画 */
@@ -371,7 +321,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>支持拖拽预览的图片拼接工具</h1>
+        <h1>图片拖拽排序拼接工具</h1>
         
         <!-- 上传区域 -->
         <div class="upload-area empty" id="uploadArea">
@@ -404,24 +354,18 @@
             </button>
         </div>
         
-        <!-- 画布容器 -->
+        <!-- 结果展示区域 -->
+        <div class="result-area" id="resultArea">
+            <img src="" alt="合并结果" class="result-image" id="resultImage">
+        </div>
+        
+        <!-- 画布容器（隐藏） -->
         <div class="canvas-container" id="canvasContainer">
             <div class="loader" id="loader">
                 <div class="loader-spinner"></div>
                 <div class="loader-text">正在处理图片...</div>
             </div>
             <canvas id="resultCanvas"></canvas>
-        </div>
-        
-        <!-- 预览弹窗 -->
-        <div class="preview-modal" id="previewModal">
-            <div class="modal-content">
-                <img src="" alt="预览图片" class="modal-img" id="previewImage">
-                <button class="close-btn" id="closePreviewBtn">&times;</button>
-                <div class="save-guide" id="saveGuide">
-                    长按图片保存 → 选择"保存图片"
-                </div>
-            </div>
         </div>
     </div>
 
@@ -432,11 +376,11 @@
             activeReaders: 0,
             isProcessing: false,
             mergedImage: null,
+            draggedItem: null,
+            draggedIndex: -1,
+            placeholder: null,
             dragStartX: 0,
-            dragStartY: 0,
-            dragOffsetX: 0,
-            dragOffsetY: 0,
-            isDragging: false
+            dragStartY: 0
         };
 
         // DOM元素引用
@@ -448,12 +392,133 @@
             canvasContainer: document.getElementById('canvasContainer'),
             resultCanvas: document.getElementById('resultCanvas'),
             ctx: document.getElementById('resultCanvas').getContext('2d'),
-            previewModal: document.getElementById('previewModal'),
-            previewImage: document.getElementById('previewImage'),
-            closePreviewBtn: document.getElementById('closePreviewBtn'),
-            saveGuide: document.getElementById('saveGuide'),
+            resultArea: document.getElementById('resultArea'),
+            resultImage: document.getElementById('resultImage'),
             loader: document.getElementById('loader')
         };
+
+        // 初始化拖拽排序功能
+        function initDragSort() {
+            elements.uploadArea.addEventListener('mousedown', startDrag);
+            elements.uploadArea.addEventListener('touchstart', startDrag, { passive: false });
+            
+            document.addEventListener('mousemove', handleDrag);
+            document.addEventListener('touchmove', handleDrag, { passive: false });
+            
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
+            
+            // 创建拖拽占位元素
+            state.placeholder = document.createElement('div');
+            state.placeholder.className = 'uploaded-image';
+            state.placeholder.style.visibility = 'hidden';
+        }
+
+        function startDrag(e) {
+            // 只处理图片项的拖拽
+            const target = e.target.closest('.uploaded-image');
+            if (!target) return;
+            
+            e.preventDefault();
+            
+            // 设置拖拽状态
+            state.draggedItem = target;
+            state.draggedIndex = Array.from(elements.uploadArea.children)
+                .filter(el => el.classList.contains('uploaded-image'))
+                .indexOf(target);
+            
+            // 记录初始位置
+            if (e.type === 'touchstart') {
+                state.dragStartX = e.touches[0].clientX - target.getBoundingClientRect().left;
+                state.dragStartY = e.touches[0].clientY - target.getBoundingClientRect().top;
+            } else {
+                state.dragStartX = e.clientX - target.getBoundingClientRect().left;
+                state.dragStartY = e.clientY - target.getBoundingClientRect().top;
+            }
+            
+            // 设置拖拽样式
+            target.classList.add('dragging');
+            target.style.position = 'absolute';
+            target.style.zIndex = '1000';
+            
+            // 添加占位元素
+            elements.uploadArea.insertBefore(state.placeholder, target.nextSibling);
+        }
+
+        function handleDrag(e) {
+            if (!state.draggedItem) return;
+            e.preventDefault();
+            
+            // 计算新位置
+            let clientX, clientY;
+            if (e.type === 'touchmove') {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            // 更新拖拽元素位置
+            state.draggedItem.style.left = (clientX - state.dragStartX) + 'px';
+            state.draggedItem.style.top = (clientY - state.dragStartY) + 'px';
+            
+            // 计算新的插入位置
+            const items = Array.from(elements.uploadArea.querySelectorAll('.uploaded-image:not(.dragging)'));
+            const closest = items.reduce((closest, child, index) => {
+                const box = child.getBoundingClientRect();
+                const offsetY = clientY - box.top - box.height / 2;
+                
+                if (offsetY < 0 && offsetY > closest.offsetY) {
+                    return { offsetY: offsetY, element: child, index: index };
+                } else {
+                    return closest;
+                }
+            }, { offsetY: Number.NEGATIVE_INFINITY });
+            
+            // 更新占位元素位置
+            if (closest.element) {
+                const newIndex = closest.index;
+                const currentIndex = Array.from(elements.uploadArea.children).indexOf(state.placeholder);
+                
+                if (newIndex !== currentIndex) {
+                    elements.uploadArea.insertBefore(state.placeholder, closest.element);
+                }
+            }
+        }
+
+        function endDrag() {
+            if (!state.draggedItem) return;
+            
+            // 恢复拖拽元素样式
+            state.draggedItem.classList.remove('dragging');
+            state.draggedItem.style.position = '';
+            state.draggedItem.style.left = '';
+            state.draggedItem.style.top = '';
+            state.draggedItem.style.zIndex = '';
+            
+            // 将拖拽元素插入到占位元素位置
+            if (state.placeholder.parentNode) {
+                const newIndex = Array.from(elements.uploadArea.children).indexOf(state.placeholder);
+                elements.uploadArea.insertBefore(state.draggedItem, state.placeholder);
+                
+                // 更新文件顺序
+                if (newIndex !== state.draggedIndex) {
+                    const file = state.imageFiles[state.draggedIndex];
+                    state.imageFiles.splice(state.draggedIndex, 1);
+                    state.imageFiles.splice(newIndex > state.draggedIndex ? newIndex - 1 : newIndex, 0, file);
+                }
+            }
+            
+            // 移除占位元素
+            if (state.placeholder.parentNode) {
+                elements.uploadArea.removeChild(state.placeholder);
+            }
+            
+            // 重置状态
+            state.draggedItem = null;
+            state.draggedIndex = -1;
+        }
 
         // 事件监听初始化
         function initEventListeners() {
@@ -477,148 +542,6 @@
 
             // 下载按钮
             elements.downloadBtn.addEventListener('click', downloadImage);
-
-            // 关闭预览
-            elements.closePreviewBtn.addEventListener('click', (e) => {
-                e.stopImmediatePropagation();
-                closePreview();
-            }, true);
-
-            // 长按保存处理
-            elements.previewImage.addEventListener('touchstart', handleTouchStart);
-            elements.previewImage.addEventListener('touchend', handleTouchEnd);
-        }
-
-        // 初始化拖拽功能
-        function initDragAndDrop() {
-            const img = elements.previewImage;
-            let startX, startY;
-            
-            // 鼠标事件
-            img.addEventListener('mousedown', (e) => {
-                if (e.button !== 0) return; // 只响应左键
-                startDrag(e.clientX, e.clientY);
-                document.addEventListener('mousemove', handleMouseMove);
-                document.addEventListener('mouseup', stopDrag);
-                e.preventDefault();
-            });
-
-            // 触摸事件
-            img.addEventListener('touchstart', (e) => {
-                if (e.touches.length !== 1) return;
-                const touch = e.touches[0];
-                startDrag(touch.clientX, touch.clientY);
-                document.addEventListener('touchmove', handleTouchMove, { passive: false });
-                document.addEventListener('touchend', stopDrag);
-                e.preventDefault();
-            });
-
-            function startDrag(clientX, clientY) {
-                state.isDragging = true;
-                startX = clientX;
-                startY = clientY;
-                state.dragOffsetX = parseFloat(img.style.transform?.replace(/[^\d.-]/g, '') || 0);
-                state.dragOffsetY = parseFloat(img.style.transform?.split(',')[1]?.replace(/[^\d.-]/g, '') || 0);
-                img.classList.add('dragging');
-                clearTimeout(window.longPressTimer);
-                elements.saveGuide.classList.remove('active');
-            }
-
-            function handleMouseMove(e) {
-                if (!state.isDragging) return;
-                updateDrag(e.clientX, e.clientY);
-                e.preventDefault();
-            }
-
-            function handleTouchMove(e) {
-                if (!state.isDragging || e.touches.length !== 1) return;
-                updateDrag(e.touches[0].clientX, e.touches[0].clientY);
-                e.preventDefault();
-            }
-
-            function updateDrag(clientX, clientY) {
-                const dx = clientX - startX;
-                const dy = clientY - startY;
-                const maxMove = 100; // 最大拖拽距离
-                
-                // 计算新位置（带边界限制）
-                const newX = Math.max(-maxMove, Math.min(maxMove, state.dragOffsetX + dx));
-                const newY = Math.max(-maxMove, Math.min(maxMove, state.dragOffsetY + dy));
-                
-                // 应用变换
-                img.style.transform = `translate(${newX}px, ${newY}px)`;
-            }
-
-            function stopDrag() {
-                if (!state.isDragging) return;
-                state.isDragging = false;
-                img.classList.remove('dragging');
-                
-                // 添加惯性动画
-                animateInertia();
-                
-                // 移除事件监听
-                document.removeEventListener('mousemove', handleMouseMove);
-                document.removeEventListener('mouseup', stopDrag);
-                document.removeEventListener('touchmove', handleTouchMove);
-                document.removeEventListener('touchend', stopDrag);
-            }
-
-            function animateInertia() {
-                const currentX = parseFloat(img.style.transform?.replace(/[^\d.-]/g, '') || 0);
-                const currentY = parseFloat(img.style.transform?.split(',')[1]?.replace(/[^\d.-]/g, '') || 0);
-                
-                // 如果接近中心则直接复位
-                if (Math.abs(currentX) < 5 && Math.abs(currentY) < 5) {
-                    img.style.transform = 'translate(0, 0)';
-                    return;
-                }
-                
-                // 惯性动画参数
-                const deceleration = 0.9;
-                let speedX = currentX * 0.2;
-                let speedY = currentY * 0.2;
-                
-                const animate = () => {
-                    speedX *= deceleration;
-                    speedY *= deceleration;
-                    
-                    const newX = currentX + speedX;
-                    const newY = currentY + speedY;
-                    
-                    // 边界检查
-                    const boundedX = Math.abs(newX) < 5 ? 0 : newX;
-                    const boundedY = Math.abs(newY) < 5 ? 0 : newY;
-                    
-                    img.style.transform = `translate(${boundedX}px, ${boundedY}px)`;
-                    
-                    // 继续动画直到停止
-                    if (Math.abs(speedX) > 0.1 || Math.abs(speedY) > 0.1) {
-                        requestAnimationFrame(animate);
-                    } else if (boundedX !== 0 || boundedY !== 0) {
-                        // 最终复位
-                        img.style.transform = 'translate(0, 0)';
-                    }
-                };
-                
-                requestAnimationFrame(animate);
-            }
-        }
-
-        // 触摸事件处理
-        function handleTouchStart(e) {
-            if (e.touches.length !== 1) return;
-            window.longPressTimer = setTimeout(() => {
-                elements.saveGuide.classList.add('active');
-            }, 500); // 500ms后显示保存提示
-        }
-
-        function handleTouchEnd(e) {
-            clearTimeout(window.longPressTimer);
-            if (elements.saveGuide.classList.contains('active')) {
-                elements.saveGuide.classList.remove('active');
-                triggerDownload();
-            }
         }
 
         // 拖拽处理
@@ -774,7 +697,8 @@
                     );
                 });
                 
-                showPreview();
+                // 显示结果区域
+                showResult();
                 checkButtonState();
             } catch (error) {
                 console.error('图片合并失败:', error);
@@ -881,18 +805,10 @@
             });
         }
 
-        // 显示预览
-        function showPreview() {
-            elements.previewImage.src = state.mergedImage;
-            elements.previewImage.style.transform = 'translate(0, 0)'; // 重置位置
-            elements.previewModal.style.display = 'flex';
-            elements.saveGuide.classList.add('active');
-        }
-
-        // 关闭预览
-        function closePreview() {
-            elements.previewModal.style.display = 'none';
-            elements.saveGuide.classList.remove('active');
+        // 显示结果
+        function showResult() {
+            elements.resultImage.src = state.mergedImage;
+            elements.resultArea.classList.add('has-result');
         }
 
         // 触发下载
@@ -916,7 +832,7 @@
         // 初始化
         function init() {
             initEventListeners();
-            initDragAndDrop(); // 初始化拖拽功能
+            initDragSort(); // 初始化拖拽排序功能
             checkButtonState();
         }
 
