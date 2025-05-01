@@ -3,189 +3,405 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>图片拼接工具 - 最终优化版</title>
+    <title>图片拼接工具</title>
     <style>
+        :root {
+            --primary-color: #6C5CE7;
+            --secondary-color: #A29BFE;
+            --accent-color: #FD79A8;
+            --light-color: #F8F9FA;
+            --dark-color: #2D3436;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
-        
+
         body {
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             line-height: 1.6;
-            padding: 15px;
-            background: #f8f9fa;
+            padding: 20px;
+            background: var(--light-color);
+            color: var(--dark-color);
         }
-        
+
         .container {
-            max-width: 100%;
+            max-width: 800px;
             margin: 0 auto;
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
         }
-        
+
         h1 {
             text-align: center;
-            margin: 20px 0;
-            font-size: 1.5rem;
-            color: #333;
+            margin: 15px 0 25px;
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            font-weight: 600;
         }
-        
-        /* 上传区域优化 */
+
+        /* 上传区域 */
         .upload-area {
-            border: 2px dashed #4CAF50;
-            padding: 30px;
+            border: 2px dashed var(--secondary-color);
+            padding: 40px 20px;
             text-align: center;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            transition: all 0.3s;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
             cursor: pointer;
-            touch-action: manipulation;
+            background: rgba(162, 155, 254, 0.05);
+            position: relative;
         }
-        
+
         .upload-area:hover {
-            background-color: rgba(76,175,80,0.05);
+            background: rgba(162, 155, 254, 0.1);
+            border-color: var(--primary-color);
         }
-        
-        /* 布局选择器优化 */
+
+        .upload-area p {
+            font-size: 1.1rem;
+            color: var(--primary-color);
+            margin-top: 10px;
+        }
+
+        .upload-area .icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+        }
+
+        /* 布局选择器 */
         .layout-selector {
-            margin: 15px 0;
+            margin: 20px 0;
             display: grid;
-            gap: 12px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
         }
-        
+
         .layout-selector label {
-            padding: 12px;
-            background: #f1f3f4;
-            border-radius: 8px;
+            padding: 15px 10px;
+            background: var(--light-color);
+            border-radius: 10px;
             cursor: pointer;
             transition: all 0.2s;
             text-align: center;
+            border: 1px solid #eee;
+            font-weight: 500;
         }
-        
+
         .layout-selector input:checked + label {
-            background: #4CAF50;
+            background: var(--primary-color);
             color: white;
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
         }
-        
-        /* 图片预览优化 */
+
+        /* 图片预览 */
         .images-preview {
             display: flex;
             flex-wrap: nowrap;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 12px;
+            margin-bottom: 25px;
             overflow-x: auto;
-            padding-bottom: 10px;
-            min-height: 160px;
+            padding-bottom: 15px;
+            min-height: 180px;
             scroll-behavior: smooth;
         }
-        
+
+        .images-preview::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .images-preview::-webkit-scrollbar-thumb {
+            background: var(--secondary-color);
+            border-radius: 4px;
+        }
+
         .image-preview {
             position: relative;
             flex: 0 0 auto;
-            min-width: 80px;
-            max-width: 160px;
+            min-width: 100px;
+            max-width: 180px;
             aspect-ratio: 1;
-            border-radius: 8px;
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.2s, flex-basis 0.3s;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
         }
-        
+
         .image-preview:hover {
             transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
         }
-        
+
         .image-preview img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        
+
         .remove-btn {
             position: absolute;
             top: 8px;
             right: 8px;
-            width: 24px;
-            height: 24px;
-            background: rgba(231,76,60,0.8);
+            width: 28px;
+            height: 28px;
+            background: rgba(253, 121, 168, 0.9);
             color: white;
             border: none;
             border-radius: 50%;
-            font-size: 14px;
+            font-size: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             padding: 0;
             z-index: 10;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
-        
+
         .remove-btn:hover {
-            background: rgba(231,76,60,1);
+            background: var(--accent-color);
+            transform: scale(1.1);
         }
-        
-        /* 操作按钮优化 */
+
+        /* 操作按钮 */
         .controls {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            margin-top: 20px;
+            gap: 15px;
+            margin-top: 25px;
         }
-        
+
         button {
-            padding: 16px;
-            background: #4CAF50;
+            padding: 18px;
+            background: var(--primary-color);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 1rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
             cursor: pointer;
-            transition: all 0.2s;
-            min-height: 48px;
-            font-weight: 500;
+            transition: all 0.3s ease;
+            min-height: 54px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
-        
+
         button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(108, 92, 231, 0.3);
+            background: var(--secondary-color);
         }
-        
+
         button:disabled {
-            background: #9E9E9E;
+            background: #DFE6E9;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
-        
-        /* 画布容器优化 */
+
+        button .icon {
+            font-size: 1.3rem;
+        }
+
+        /* 画布容器 */
         .canvas-container {
-            margin-top: 20px;
-            border-radius: 8px;
+            margin-top: 25px;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             display: none;
+            position: relative;
+            border: 1px solid #eee;
         }
-        
+
         canvas {
             width: 100%;
             height: auto;
             display: block;
             background: #f9f9f9;
         }
-        
-        /* 移动端适配 */
-        @media (max-width: 480px) {
+
+        /* 预览弹窗 */
+        .preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(45, 52, 54, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .modal-img {
+            max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+            display: block;
+            pointer-events: none;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 44px;
+            height: 44px;
+            background: rgba(253, 121, 168, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: var(--accent-color);
+            transform: scale(1.1);
+        }
+
+        /* 长按提示 */
+        .save-guide {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 15px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .save-guide.active {
+            opacity: 1;
+        }
+
+        /* 加载动画 */
+        .loader {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            border-radius: 12px;
+        }
+
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--secondary-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        .loader-text {
+            color: var(--primary-color);
+            font-weight: 500;
+            margin-top: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
             .container {
-                padding: 15px;
+                padding: 20px;
+                border-radius: 12px;
             }
-            
+
+            h1 {
+                font-size: 1.5rem;
+                margin: 10px 0 20px;
+            }
+
+            .upload-area {
+                padding: 30px 15px;
+            }
+
+            .layout-selector {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
             .image-preview {
-                min-width: 60px;
+                min-width: 80px;
                 max-width: 120px;
             }
+
+            button {
+                padding: 16px;
+                font-size: 1rem;
+            }
+        }
+
+        /* 工具提示 */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: var(--dark-color);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
         }
     </style>
 </head>
@@ -193,35 +409,68 @@
     <div class="container">
         <h1>图片拼接工具</h1>
         
+        <!-- 上传区域 -->
         <div class="upload-area" id="uploadArea">
+            <div class="icon">📁</div>
             <p>点击或拖拽图片到此处上传</p>
             <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
         </div>
         
+        <!-- 布局选择 -->
         <div class="layout-selector">
             <label>
                 <input type="radio" name="layout" value="horizontal" checked> 
-                水平排列
+                <span class="tooltip">水平排列
+                    <span class="tooltiptext">图片横向排列</span>
+                </span>
             </label>
             <label>
                 <input type="radio" name="layout" value="vertical"> 
-                垂直排列
+                <span class="tooltip">垂直排列
+                    <span class="tooltiptext">图片纵向排列</span>
+                </span>
             </label>
             <label>
                 <input type="radio" name="layout" value="grid"> 
-                网格排列
+                <span class="tooltip">网格排列
+                    <span class="tooltiptext">自动计算行列数</span>
+                </span>
             </label>
         </div>
         
+        <!-- 图片预览 -->
         <div class="images-preview" id="imagesPreview"></div>
         
+        <!-- 操作按钮 -->
         <div class="controls">
-            <button id="mergeBtn" disabled>合并图片</button>
-            <button id="downloadBtn" disabled>下载图片</button>
+            <button id="mergeBtn" disabled>
+                <span class="icon">🖼️</span>
+                合并图片
+            </button>
+            <button id="downloadBtn" disabled>
+                <span class="icon">⬇️</span>
+                下载图片
+            </button>
         </div>
         
+        <!-- 画布容器 -->
         <div class="canvas-container" id="canvasContainer">
+            <div class="loader" id="loader">
+                <div class="loader-spinner"></div>
+                <div class="loader-text">正在处理图片...</div>
+            </div>
             <canvas id="resultCanvas"></canvas>
+        </div>
+        
+        <!-- 预览弹窗 -->
+        <div class="preview-modal" id="previewModal">
+            <div class="modal-content">
+                <img src="" alt="预览图片" class="modal-img" id="previewImage">
+                <button class="close-btn" id="closePreviewBtn">&times;</button>
+                <div class="save-guide" id="saveGuide">
+                    长按图片保存 → 选择"保存图片"
+                </div>
+            </div>
         </div>
     </div>
 
@@ -230,7 +479,8 @@
         const state = {
             imageFiles: [],
             activeReaders: 0,
-            isProcessing: false
+            isProcessing: false,
+            mergedImage: null
         };
 
         // DOM元素引用
@@ -242,7 +492,12 @@
             downloadBtn: document.getElementById('downloadBtn'),
             canvasContainer: document.getElementById('canvasContainer'),
             resultCanvas: document.getElementById('resultCanvas'),
-            ctx: document.getElementById('resultCanvas').getContext('2d')
+            ctx: document.getElementById('resultCanvas').getContext('2d'),
+            previewModal: document.getElementById('previewModal'),
+            previewImage: document.getElementById('previewImage'),
+            closePreviewBtn: document.getElementById('closePreviewBtn'),
+            saveGuide: document.getElementById('saveGuide'),
+            loader: document.getElementById('loader')
         };
 
         // 事件监听初始化
@@ -265,25 +520,42 @@
 
             // 下载按钮
             elements.downloadBtn.addEventListener('click', downloadImage);
+
+            // 关闭预览
+            elements.closePreviewBtn.addEventListener('click', closePreview, true);
+
+            // 长按保存处理
+            elements.previewImage.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                elements.saveGuide.classList.add('active');
+            });
+
+            elements.previewImage.addEventListener('touchend', (e) => {
+                if (!elements.saveGuide.classList.contains('active')) return;
+                elements.saveGuide.classList.remove('active');
+                triggerDownload();
+            });
         }
 
-        // 拖拽相关处理
+        // 拖拽处理
         function handleDragOver(e) {
             e.preventDefault();
-            elements.uploadArea.style.borderColor = '#4CAF50';
+            elements.uploadArea.style.borderColor = 'var(--primary-color)';
+            elements.uploadArea.style.background = 'rgba(162, 155, 254, 0.15)';
         }
 
         function handleDragLeave() {
-            elements.uploadArea.style.borderColor = '#ccc';
+            elements.uploadArea.style.borderColor = 'var(--secondary-color)';
+            elements.uploadArea.style.background = 'rgba(162, 155, 254, 0.05)';
         }
 
         function handleFileDrop(e) {
             e.preventDefault();
-            elements.uploadArea.style.borderColor = '#ccc';
+            handleDragLeave();
             handleFiles(e.dataTransfer.files);
         }
 
-        // 文件处理核心逻辑
+        // 文件处理
         function handleFileSelect(e) {
             handleFiles(e.target.files);
         }
@@ -293,7 +565,7 @@
 
             const newFiles = Array.from(files)
                 .filter(file => file.type.startsWith('image/'))
-                .slice(0, 20); // 限制最多20张图片
+                .slice(0, 20);
 
             if (newFiles.length === 0) return;
 
@@ -338,7 +610,10 @@
             const removeBtn = document.createElement('button');
             removeBtn.className = 'remove-btn';
             removeBtn.innerHTML = '&times;';
-            removeBtn.addEventListener('click', () => removeImage(index));
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                removeImage(index);
+            });
 
             previewDiv.appendChild(img);
             previewDiv.appendChild(removeBtn);
@@ -348,11 +623,11 @@
         function checkAllImagesLoaded() {
             if (state.activeReaders === 0) {
                 checkButtonState();
-                adjustImageSizes(); // 动态调整尺寸
+                adjustImageSizes();
             }
         }
 
-        // 图片管理功能
+        // 图片管理
         function removeImage(index) {
             state.imageFiles.splice(index, 1);
             updatePreview();
@@ -361,34 +636,17 @@
 
         function checkButtonState() {
             elements.mergeBtn.disabled = state.imageFiles.length < 2;
-            elements.downloadBtn.disabled = state.imageFiles.length < 2;
+            elements.downloadBtn.disabled = !state.mergedImage;
         }
 
-        // 动态调整图片尺寸
-        function adjustImageSizes() {
-            const container = elements.imagesPreview;
-            const images = container.querySelectorAll('.image-preview');
-            if (images.length === 0) return;
-
-            const containerWidth = container.clientWidth;
-            const totalGap = 10 * (images.length - 1);
-            const availableWidth = containerWidth - totalGap;
-            const baseSize = Math.max(80, Math.floor(availableWidth / images.length));
-
-            images.forEach(img => {
-                img.style.flexBasis = `${baseSize}px`;
-                img.style.minWidth = `${baseSize}px`;
-                img.style.maxWidth = `${baseSize}px`;
-            });
-        }
-
-        // 图片合并逻辑（保持原核心代码）
+        // 图片合并
         async function mergeImages() {
             if (state.isProcessing) return;
             if (state.imageFiles.length < 2) return;
 
             state.isProcessing = true;
             elements.mergeBtn.disabled = true;
+            elements.loader.style.display = 'flex';
 
             try {
                 const layout = document.querySelector('input[name="layout"]:checked').value;
@@ -397,12 +655,19 @@
                 
                 setupCanvas(canvasSize);
                 drawImages(images, layout);
-                showCanvas();
+                
+                // 压缩合并后的图片
+                const compressedDataUrl = await compressImage(elements.resultCanvas);
+                state.mergedImage = compressedDataUrl;
+                
+                showPreview();
+                checkButtonState();
             } catch (error) {
                 console.error('图片合并失败:', error);
                 alert('图片处理失败，请重试');
             } finally {
                 state.isProcessing = false;
+                elements.loader.style.display = 'none';
                 elements.mergeBtn.disabled = false;
             }
         }
@@ -429,7 +694,7 @@
                     width: Math.max(...images.map(img => img.width)),
                     height: images.reduce((sum, img) => sum + img.height, 0)
                 };
-            } else { // grid
+            } else {
                 const cols = Math.ceil(Math.sqrt(images.length));
                 const maxWidth = Math.max(...images.map(img => img.width));
                 const maxHeight = Math.max(...images.map(img => img.height));
@@ -441,67 +706,146 @@
         }
 
         function setupCanvas(size) {
-            elements.resultCanvas.width = size.width;
-            elements.resultCanvas.height = size.height;
+            // 限制最大尺寸为4000x4000
+            const maxSize = 4000;
+            let width = size.width;
+            let height = size.height;
+            
+            if (width > maxSize || height > maxSize) {
+                const ratio = Math.min(maxSize / width, maxSize / height);
+                width = Math.floor(width * ratio);
+                height = Math.floor(height * ratio);
+            }
+            
+            elements.resultCanvas.width = width;
+            elements.resultCanvas.height = height;
             elements.canvasContainer.style.display = 'block';
         }
 
         function drawImages(images, layout) {
             elements.ctx.clearRect(0, 0, elements.resultCanvas.width, elements.resultCanvas.height);
             
+            // 计算缩放比例
+            const scale = elements.resultCanvas.width / calculateOriginalSize(images, layout).width;
+            
             if (layout === 'horizontal') {
-                drawHorizontal(images);
+                drawHorizontal(images, scale);
             } else if (layout === 'vertical') {
-                drawVertical(images);
+                drawVertical(images, scale);
             } else {
-                drawGrid(images);
+                drawGrid(images, scale);
             }
         }
 
-        function drawHorizontal(images) {
+        function calculateOriginalSize(images, layout) {
+            if (layout === 'horizontal') {
+                return {
+                    width: images.reduce((sum, img) => sum + img.width, 0),
+                    height: Math.max(...images.map(img => img.height))
+                };
+            } else if (layout === 'vertical') {
+                return {
+                    width: Math.max(...images.map(img => img.width)),
+                    height: images.reduce((sum, img) => sum + img.height, 0)
+                };
+            } else {
+                const cols = Math.ceil(Math.sqrt(images.length));
+                const maxWidth = Math.max(...images.map(img => img.width));
+                return {
+                    width: cols * maxWidth,
+                    height: cols * maxWidth
+                };
+            }
+        }
+
+        function drawHorizontal(images, scale) {
             let x = 0;
             images.forEach(img => {
-                elements.ctx.drawImage(img, x, 0, img.width, img.height);
-                x += img.width;
+                const width = img.width * scale;
+                const height = img.height * scale;
+                elements.ctx.drawImage(img, x, 0, width, height);
+                x += width;
             });
         }
 
-        function drawVertical(images) {
+        function drawVertical(images, scale) {
             let y = 0;
             images.forEach(img => {
-                elements.ctx.drawImage(img, 0, y, img.width, img.height);
-                y += img.height;
+                const width = img.width * scale;
+                const height = img.height * scale;
+                elements.ctx.drawImage(img, 0, y, width, height);
+                y += height;
             });
         }
 
-        function drawGrid(images) {
+        function drawGrid(images, scale) {
             const cols = Math.ceil(Math.sqrt(images.length));
-            const cellWidth = elements.resultCanvas.width / cols;
+            const cellSize = elements.resultCanvas.width / cols;
             
             images.forEach((img, index) => {
                 const row = Math.floor(index / cols);
                 const col = index % cols;
-                elements.ctx.drawImage(
-                    img,
-                    col * cellWidth,
-                    row * cellWidth,
-                    cellWidth,
-                    cellWidth
-                );
+                const width = img.width * scale;
+                const height = img.height * scale;
+                
+                // 居中绘制
+                const x = col * cellSize + (cellSize - width) / 2;
+                const y = row * cellSize + (cellSize - height) / 2;
+                
+                elements.ctx.drawImage(img, x, y, width, height);
             });
         }
 
-        function showCanvas() {
-            elements.canvasContainer.style.display = 'block';
-            elements.downloadBtn.disabled = false;
+        // 图片压缩
+        function compressImage(canvas, quality = 0.8) {
+            return new Promise((resolve) => {
+                canvas.toBlob((blob) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.readAsDataURL(blob);
+                }, 'image/jpeg', quality);
+            });
         }
 
-        // 下载功能
-        function downloadImage() {
+        // 显示预览
+        function showPreview() {
+            elements.previewImage.src = state.mergedImage;
+            elements.previewModal.style.display = 'flex';
+            elements.saveGuide.classList.add('active');
+        }
+
+        // 关闭预览
+        function closePreview(e) {
+            e.stopPropagation();
+            elements.previewModal.style.display = 'none';
+            elements.saveGuide.classList.remove('active');
+        }
+
+        // 触发下载
+        function triggerDownload() {
             const link = document.createElement('a');
-            link.download = `merged-image-${Date.now()}.png`;
-            link.href = elements.resultCanvas.toDataURL('image/png');
+            link.download = `merged-image-${Date.now()}.jpg`;
+            link.href = state.mergedImage;
             link.click();
+        }
+
+        function downloadImage() {
+            if (state.mergedImage) {
+                triggerDownload();
+            }
+        }
+
+        // 调整图片尺寸
+        function adjustImageSizes() {
+            const previews = elements.imagesPreview.querySelectorAll('.image-preview');
+            previews.forEach(preview => {
+                const img = preview.querySelector('img');
+                if (img.naturalWidth > img.naturalHeight) {
+                    preview.style.maxWidth = '180px';
+                } else {
+                    preview.style.maxWidth = '120px';
+                }
+            });
         }
 
         // 初始化
