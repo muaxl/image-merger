@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片拼接工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: #aaa;
+        }
+        .images-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .image-preview {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border: 1px solid #ddd;
+            overflow: hidden;
+        }
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .canvas-container {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            display: none;
+        }
+        canvas {
+            max-width: 100%;
+            background: #f9f9f9;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .layout-selector {
+            margin-top: 10px;
+        }
+        label {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>图片拼接工具</h1>
+        
+        <div class="upload-area" id="uploadArea">
+            <p>点击或拖拽图片到此处上传</p>
+            <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+        </div>
+        
+        <div class="layout-selector">
+            <label>
+                <input type="radio" name="layout" value="horizontal" checked> 水平排列
+            </label>
+            <label>
+                <input type="radio" name="layout" value="vertical"> 垂直排列
+            </label>
+            <label>
+                <input type="radio" name="layout" value="grid"> 网格排列
+            </label>
+        </div>
+        
+        <div class="images-preview" id="imagesPreview"></div>
+        
+        <div class="controls">
+            <button id="mergeBtn" disabled>合并图片</button>
+            <button id="downloadBtn" disabled>下载图片</button>
+        </div>
+        
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="resultCanvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const imagesPreview = document.getElementById('imagesPreview');
+        const mergeBtn = document.getElementById('mergeBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const resultCanvas = document.getElementById('resultCanvas');
+        const ctx = resultCanvas.getContext('2d');
+        
+        let imageFiles = [];
+        
+        // 点击上传区域触发文件选择
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        // 拖拽上传功能
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#4CAF50';
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#ccc';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ccc';
+            
+            if (e.dataTransfer.files.length > 0) {
+                handleFiles(e.dataTransfer.files);
+            }
+        });
+        
+        // 文件选择处理
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                handleFiles(fileInput.files);
+            }
+        });
+        
+        // 处理上传的文件
+        function handleFiles(files) {
+            // 过滤出图片文件
+            const newFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+            
+            if (newFiles.length === 0) {
+                alert('请选择图片文件！');
+                return;
+            }
+            
+            // 添加到图片列表
+            imageFiles = [...imageFiles, ...newFiles];
+            
+            // 更新预览
+            updatePreview();
+            
+            // 启用合并按钮
+            if (imageFiles.length > 1) {
+                mergeBtn.disabled = false;
+            }
+        }
+        
+        // 更新预览区域
+        function updatePreview() {
+            imagesPreview.innerHTML = '';
+            
+            imageFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'image-preview';
+                    previewDiv.dataset.index = index;
+                    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'remove-btn';
+                    removeBtn.innerHTML = '&times;';
+                    removeBtn.addEventListener('click', () => {
+                        imageFiles.splice(index, 1);
+                        updatePreview();
+                        
+                        if (imageFiles.length < 2) {
+                            mergeBtn.disabled = true;
+                            downloadBtn.disabled = true;
+                            canvasContainer.style.display = 'none';
+                        }
+                    });
+                    
+                    previewDiv.appendChild(img);
+                    previewDiv.appendChild(removeBtn);
+                    imagesPreview.appendChild(previewDiv);
+                };
+                
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // 合并图片
+        mergeBtn.addEventListener('click', () => {
+            if (imageFiles.length < 2) {
+                alert('请至少上传两张图片！');
+                return;
+            }
+            
+            const layout = document.querySelector('input[name="layout"]:checked').value;
+            mergeImages(layout);
+        });
+        
+        // 下载合并后的图片
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'merged-image.png';
+            link.href = resultCanvas.toDataURL('image/png');
+            link.click();
+        });
+        
+        // 图片合并逻辑
+        function mergeImages(layout) {
+            // 创建临时Image对象用于获取尺寸
+            const tempImages = imageFiles.map(file => {
+                const img = new Image();
+                img.src = URL.createObjectURL(file);
+                return img;
+            });
+            
+            // 等待所有图片加载完成
+            Promise.all(tempImages.map(img => {
+                return new Promise(resolve => {
+                    img.onload = resolve;
+                });
+            })).then(() => {
+                let canvasWidth = 0;
+                let canvasHeight = 0;
+                const images = tempImages.map(img => {
+                    URL.revokeObjectURL(img.src); // 释放内存
+                    return img;
+                });
+                
+                // 根据布局计算画布大小
+                if (layout === 'horizontal') {
+                    // 水平排列：宽度为所有图片宽度之和，高度为最高图片的高度
+                    canvasHeight = Math.max(...images.map(img => img.height));
+                    canvasWidth = images.reduce((sum, img) => sum + img.width, 0);
+                } else if (layout === 'vertical') {
+                    // 垂直排列：高度为所有图片高度之和，宽度为最宽图片的宽度
+                    canvasWidth = Math.max(...images.map(img => img.width));
+                    canvasHeight = images.reduce((sum, img) => sum + img.height, 0);
+                } else if (layout === 'grid') {
+                    // 网格排列：尝试创建接近正方形的网格
+                    const cols = Math.ceil(Math.sqrt(images.length));
+                    const rows = Math.ceil(images.length / cols);
+                    
+                    // 计算每个单元格的最大尺寸
+                    let maxWidth = 0;
+                    let maxHeight = 0;
+                    
+                    images.forEach(img => {
+                        if (img.width > maxWidth) maxWidth = img.width;
+                        if (img.height > maxHeight) maxHeight = img.height;
+                    });
+                    
+                    // 计算画布大小
+                    const cellWidth = maxWidth;
+                    const cellHeight = maxHeight;
+                    
+                    canvasWidth = cols * cellWidth;
+                    canvasHeight = rows * cellHeight;
+                }
+                
+                // 设置canvas尺寸
+                resultCanvas.width = canvasWidth;
+                resultCanvas.height = canvasHeight;
+                
+                // 清空canvas
+                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                
+                // 绘制图片
+                if (layout === 'horizontal') {
+                    let x = 0;
+                    images.forEach(img => {
+                        ctx.drawImage(img, x, 0, img.width, img.height);
+                        x += img.width;
+                    });
+                } else if (layout === 'vertical') {
+                    let y = 0;
+                    images.forEach(img => {
+                        ctx.drawImage(img, 0, y, img.width, img.height);
+                        y += img.height;
+                    });
+                } else if (layout === 'grid') {
+                    const cols = Math.ceil(Math.sqrt(images.length));
+                    const rows = Math.ceil(images.length / cols);
+                    
+                    let currentRow = 0;
+                    let currentCol = 0;
+                    
+                    images.forEach((img, index) => {
+                        // 计算缩放比例以适应单元格
+                        const scale = Math.min(
+                            canvasWidth / cols / img.width,
+                            canvasHeight / rows / img.height
+                        );
+                        
+                        const scaledWidth = img.width * scale;
+                        const scaledHeight = img.height * scale;
+                        
+                        // 计算位置
+                        const x = currentCol * (canvasWidth / cols) + (canvasWidth / cols - scaledWidth) / 2;
+                        const y = currentRow * (canvasHeight / rows) + (canvasHeight / rows - scaledHeight) / 2;
+                        
+                        // 绘制图片
+                        ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+                        
+                        currentCol++;
+                        if (currentCol >= cols) {
+                            currentCol = 0;
+                            currentRow++;
+                        }
+                    });
+                }
+                
+                // 显示canvas并启用下载按钮
+                canvasContainer.style.display = 'block';
+                downloadBtn.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>
