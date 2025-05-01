@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>图片拼接工具</title>
+    <title>极简图片拼接工具</title>
     <style>
         :root {
             --primary-color: #6C5CE7;
@@ -46,10 +46,10 @@
             font-weight: 600;
         }
 
-        /* 上传区域 */
+        /* 上传区域 - 修改后样式 */
         .upload-area {
             border: 2px dashed var(--secondary-color);
-            padding: 40px 20px;
+            padding: 20px;
             text-align: center;
             border-radius: 12px;
             margin-bottom: 25px;
@@ -57,6 +57,28 @@
             cursor: pointer;
             background: rgba(162, 155, 254, 0.05);
             position: relative;
+            min-height: 150px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .upload-area.empty {
+            flex-direction: column;
+            padding: 40px 20px;
+        }
+
+        .upload-area.empty p {
+            font-size: 1.1rem;
+            color: var(--primary-color);
+            margin-top: 10px;
+        }
+
+        .upload-area.empty .icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
         }
 
         .upload-area:hover {
@@ -64,27 +86,17 @@
             border-color: var(--primary-color);
         }
 
-        .upload-area p {
-            font-size: 1.1rem;
-            color: var(--primary-color);
-            margin-top: 10px;
-        }
-
-        .upload-area .icon {
-            font-size: 2.5rem;
-            color: var(--primary-color);
-        }
-
-        /* 布局选择器 */
+        /* 布局选择器 - 修改后样式 */
         .layout-selector {
-            margin: 20px 0;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            margin: 20px auto;
+            display: flex;
             gap: 15px;
+            justify-content: center;
+            max-width: 400px;
         }
 
         .layout-selector label {
-            padding: 15px 10px;
+            padding: 15px 25px;
             background: var(--light-color);
             border-radius: 10px;
             cursor: pointer;
@@ -92,6 +104,8 @@
             text-align: center;
             border: 1px solid #eee;
             font-weight: 500;
+            flex: 1;
+            max-width: 180px;
         }
 
         .layout-selector input:checked + label {
@@ -101,68 +115,41 @@
             box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
         }
 
-        /* 图片预览 */
-        .images-preview {
-            display: flex;
-            flex-wrap: nowrap;
-            gap: 12px;
-            margin-bottom: 25px;
-            overflow-x: auto;
-            padding-bottom: 15px;
-            min-height: 180px;
-            scroll-behavior: smooth;
-        }
-
-        .images-preview::-webkit-scrollbar {
-            height: 8px;
-        }
-
-        .images-preview::-webkit-scrollbar-thumb {
-            background: var(--secondary-color);
-            border-radius: 4px;
-        }
-
-        .image-preview {
+        /* 上传图片预览 - 修改后样式 */
+        .uploaded-image {
             position: relative;
-            flex: 0 0 auto;
-            min-width: 100px;
-            max-width: 180px;
-            aspect-ratio: 1;
-            border-radius: 10px;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
         }
 
-        .image-preview:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-        }
-
-        .image-preview img {
+        .uploaded-image img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
 
+        /* 修复后的关闭按钮 */
         .remove-btn {
             position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 28px;
-            height: 28px;
+            top: 5px;
+            right: 5px;
+            width: 24px;
+            height: 24px;
             background: rgba(253, 121, 168, 0.9);
             color: white;
             border: none;
             border-radius: 50%;
-            font-size: 16px;
+            font-size: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             padding: 0;
             z-index: 10;
-            transition: all 0.2s;
+            line-height: 1;
         }
 
         .remove-btn:hover {
@@ -267,19 +254,21 @@
             position: absolute;
             top: 15px;
             right: 15px;
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             background: rgba(253, 121, 168, 0.9);
             color: white;
             border: none;
             border-radius: 50%;
-            font-size: 22px;
+            font-size: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 1001;
             cursor: pointer;
             transition: all 0.2s;
+            padding: 0;
+            line-height: 1;
         }
 
         .close-btn:hover {
@@ -356,90 +345,44 @@
                 margin: 10px 0 20px;
             }
 
-            .upload-area {
+            .upload-area.empty {
                 padding: 30px 15px;
             }
 
             .layout-selector {
-                grid-template-columns: 1fr;
-                gap: 10px;
+                flex-direction: column;
+                max-width: 300px;
             }
 
-            .image-preview {
-                min-width: 80px;
-                max-width: 120px;
+            .layout-selector label {
+                max-width: 100%;
+                padding: 15px;
             }
-
-            button {
-                padding: 16px;
-                font-size: 1rem;
-            }
-        }
-
-        /* 工具提示 */
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
-
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 120px;
-            background-color: var(--dark-color);
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -60px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>图片拼接工具</h1>
+        <h1>极简图片拼接工具</h1>
         
-        <!-- 上传区域 -->
-        <div class="upload-area" id="uploadArea">
+        <!-- 上传区域 - 修改后结构 -->
+        <div class="upload-area empty" id="uploadArea">
             <div class="icon">📁</div>
             <p>点击或拖拽图片到此处上传</p>
             <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
         </div>
         
-        <!-- 布局选择 -->
+        <!-- 布局选择 - 修改后结构 -->
         <div class="layout-selector">
             <label>
                 <input type="radio" name="layout" value="horizontal" checked> 
-                <span class="tooltip">水平排列
-                    <span class="tooltiptext">图片横向排列</span>
-                </span>
+                水平排列
             </label>
             <label>
                 <input type="radio" name="layout" value="vertical"> 
-                <span class="tooltip">垂直排列
-                    <span class="tooltiptext">图片纵向排列</span>
-                </span>
-            </label>
-            <label>
-                <input type="radio" name="layout" value="grid"> 
-                <span class="tooltip">网格排列
-                    <span class="tooltiptext">自动计算行列数</span>
-                </span>
+                垂直排列
             </label>
         </div>
-        
-        <!-- 图片预览 -->
-        <div class="images-preview" id="imagesPreview"></div>
         
         <!-- 操作按钮 -->
         <div class="controls">
@@ -487,7 +430,6 @@
         const elements = {
             uploadArea: document.getElementById('uploadArea'),
             fileInput: document.getElementById('fileInput'),
-            imagesPreview: document.getElementById('imagesPreview'),
             mergeBtn: document.getElementById('mergeBtn'),
             downloadBtn: document.getElementById('downloadBtn'),
             canvasContainer: document.getElementById('canvasContainer'),
@@ -503,8 +445,10 @@
         // 事件监听初始化
         function initEventListeners() {
             // 上传区域点击
-            elements.uploadArea.addEventListener('click', () => {
-                elements.fileInput.click();
+            elements.uploadArea.addEventListener('click', (e) => {
+                if (e.target === elements.uploadArea || e.target.classList.contains('icon') || e.target.tagName === 'P') {
+                    elements.fileInput.click();
+                }
             });
 
             // 拖拽上传
@@ -521,8 +465,11 @@
             // 下载按钮
             elements.downloadBtn.addEventListener('click', downloadImage);
 
-            // 关闭预览
-            elements.closePreviewBtn.addEventListener('click', closePreview, true);
+            // 关闭预览 - 修复后事件绑定
+            elements.closePreviewBtn.addEventListener('click', (e) => {
+                e.stopImmediatePropagation();
+                closePreview();
+            }, true);
 
             // 长按保存处理
             elements.previewImage.addEventListener('touchstart', (e) => {
@@ -546,7 +493,9 @@
 
         function handleDragLeave() {
             elements.uploadArea.style.borderColor = 'var(--secondary-color)';
-            elements.uploadArea.style.background = 'rgba(162, 155, 254, 0.05)';
+            elements.uploadArea.style.background = state.imageFiles.length > 0 
+                ? 'rgba(162, 155, 254, 0.05)' 
+                : 'rgba(162, 155, 254, 0.05)';
         }
 
         function handleFileDrop(e) {
@@ -555,9 +504,10 @@
             handleFiles(e.dataTransfer.files);
         }
 
-        // 文件处理
+        // 文件处理 - 修改后逻辑
         function handleFileSelect(e) {
             handleFiles(e.target.files);
+            e.target.value = ''; // 清除input值允许重复上传相同文件
         }
 
         function handleFiles(files) {
@@ -570,43 +520,68 @@
             if (newFiles.length === 0) return;
 
             state.imageFiles = [...state.imageFiles, ...newFiles];
-            updatePreview();
+            updateUploadArea();
             checkButtonState();
         }
 
-        // 图片预览更新
-        function updatePreview() {
-            elements.imagesPreview.innerHTML = '';
-            state.activeReaders = state.imageFiles.length;
+        // 更新上传区域显示 - 新增函数
+        function updateUploadArea() {
+            elements.uploadArea.innerHTML = '';
+            elements.uploadArea.classList.remove('empty');
+            
+            if (state.imageFiles.length === 0) {
+                elements.uploadArea.classList.add('empty');
+                elements.uploadArea.innerHTML = `
+                    <div class="icon">📁</div>
+                    <p>点击或拖拽图片到此处上传</p>
+                    <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+                `;
+                elements.fileInput = document.getElementById('fileInput');
+                return;
+            }
 
+            state.activeReaders = state.imageFiles.length;
+            
             state.imageFiles.forEach((file, index) => {
                 const reader = new FileReader();
                 
                 reader.onload = (e) => {
                     state.activeReaders--;
-                    createImagePreview(e.target.result, index);
-                    checkAllImagesLoaded();
+                    createUploadedThumbnail(e.target.result, index);
+                    if (state.activeReaders === 0) {
+                        checkButtonState();
+                    }
                 };
 
                 reader.onerror = () => {
                     state.activeReaders--;
                     console.error(`图片加载失败: ${file.name}`);
-                    checkAllImagesLoaded();
                 };
 
                 reader.readAsDataURL(file);
             });
+
+            // 重新添加文件input
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.id = 'fileInput';
+            fileInput.multiple = true;
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+            fileInput.addEventListener('change', handleFileSelect);
+            elements.uploadArea.appendChild(fileInput);
+            elements.fileInput = fileInput;
         }
 
-        function createImagePreview(dataUrl, index) {
-            const previewDiv = document.createElement('div');
-            previewDiv.className = 'image-preview';
-            previewDiv.dataset.index = index;
-
+        // 创建上传缩略图 - 新增函数
+        function createUploadedThumbnail(dataUrl, index) {
+            const thumbnail = document.createElement('div');
+            thumbnail.className = 'uploaded-image';
+            
             const img = new Image();
             img.src = dataUrl;
             img.alt = `预览 ${index + 1}`;
-
+            
             const removeBtn = document.createElement('button');
             removeBtn.className = 'remove-btn';
             removeBtn.innerHTML = '&times;';
@@ -614,23 +589,16 @@
                 e.stopPropagation();
                 removeImage(index);
             });
-
-            previewDiv.appendChild(img);
-            previewDiv.appendChild(removeBtn);
-            elements.imagesPreview.appendChild(previewDiv);
-        }
-
-        function checkAllImagesLoaded() {
-            if (state.activeReaders === 0) {
-                checkButtonState();
-                adjustImageSizes();
-            }
+            
+            thumbnail.appendChild(img);
+            thumbnail.appendChild(removeBtn);
+            elements.uploadArea.insertBefore(thumbnail, elements.fileInput);
         }
 
         // 图片管理
         function removeImage(index) {
             state.imageFiles.splice(index, 1);
-            updatePreview();
+            updateUploadArea();
             checkButtonState();
         }
 
@@ -639,7 +607,7 @@
             elements.downloadBtn.disabled = !state.mergedImage;
         }
 
-        // 图片合并
+        // 图片合并 - 修复后逻辑
         async function mergeImages() {
             if (state.isProcessing) return;
             if (state.imageFiles.length < 2) return;
@@ -657,14 +625,23 @@
                 drawImages(images, layout);
                 
                 // 压缩合并后的图片
-                const compressedDataUrl = await compressImage(elements.resultCanvas);
-                state.mergedImage = compressedDataUrl;
+                state.mergedImage = await new Promise((resolve) => {
+                    elements.resultCanvas.toBlob(
+                        blob => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.readAsDataURL(blob);
+                        },
+                        'image/jpeg',
+                        0.7
+                    );
+                });
                 
                 showPreview();
                 checkButtonState();
             } catch (error) {
                 console.error('图片合并失败:', error);
-                alert('图片处理失败，请重试');
+                alert('图片处理失败，请尝试减少图片数量或尺寸');
             } finally {
                 state.isProcessing = false;
                 elements.loader.style.display = 'none';
@@ -689,51 +666,37 @@
                     width: images.reduce((sum, img) => sum + img.width, 0),
                     height: Math.max(...images.map(img => img.height))
                 };
-            } else if (layout === 'vertical') {
+            } else {
                 return {
                     width: Math.max(...images.map(img => img.width)),
                     height: images.reduce((sum, img) => sum + img.height, 0)
-                };
-            } else {
-                const cols = Math.ceil(Math.sqrt(images.length));
-                const maxWidth = Math.max(...images.map(img => img.width));
-                const maxHeight = Math.max(...images.map(img => img.height));
-                return {
-                    width: cols * maxWidth,
-                    height: cols * maxHeight
                 };
             }
         }
 
         function setupCanvas(size) {
             // 限制最大尺寸为4000x4000
-            const maxSize = 4000;
-            let width = size.width;
-            let height = size.height;
+            const MAX_SIZE = 4000;
+            const ratio = Math.min(
+                MAX_SIZE / size.width, 
+                MAX_SIZE / size.height,
+                1
+            );
             
-            if (width > maxSize || height > maxSize) {
-                const ratio = Math.min(maxSize / width, maxSize / height);
-                width = Math.floor(width * ratio);
-                height = Math.floor(height * ratio);
-            }
-            
-            elements.resultCanvas.width = width;
-            elements.resultCanvas.height = height;
+            elements.resultCanvas.width = size.width * ratio;
+            elements.resultCanvas.height = size.height * ratio;
             elements.canvasContainer.style.display = 'block';
         }
 
         function drawImages(images, layout) {
             elements.ctx.clearRect(0, 0, elements.resultCanvas.width, elements.resultCanvas.height);
             
-            // 计算缩放比例
             const scale = elements.resultCanvas.width / calculateOriginalSize(images, layout).width;
             
             if (layout === 'horizontal') {
                 drawHorizontal(images, scale);
-            } else if (layout === 'vertical') {
-                drawVertical(images, scale);
             } else {
-                drawGrid(images, scale);
+                drawVertical(images, scale);
             }
         }
 
@@ -743,17 +706,10 @@
                     width: images.reduce((sum, img) => sum + img.width, 0),
                     height: Math.max(...images.map(img => img.height))
                 };
-            } else if (layout === 'vertical') {
+            } else {
                 return {
                     width: Math.max(...images.map(img => img.width)),
                     height: images.reduce((sum, img) => sum + img.height, 0)
-                };
-            } else {
-                const cols = Math.ceil(Math.sqrt(images.length));
-                const maxWidth = Math.max(...images.map(img => img.width));
-                return {
-                    width: cols * maxWidth,
-                    height: cols * maxWidth
                 };
             }
         }
@@ -778,35 +734,6 @@
             });
         }
 
-        function drawGrid(images, scale) {
-            const cols = Math.ceil(Math.sqrt(images.length));
-            const cellSize = elements.resultCanvas.width / cols;
-            
-            images.forEach((img, index) => {
-                const row = Math.floor(index / cols);
-                const col = index % cols;
-                const width = img.width * scale;
-                const height = img.height * scale;
-                
-                // 居中绘制
-                const x = col * cellSize + (cellSize - width) / 2;
-                const y = row * cellSize + (cellSize - height) / 2;
-                
-                elements.ctx.drawImage(img, x, y, width, height);
-            });
-        }
-
-        // 图片压缩
-        function compressImage(canvas, quality = 0.8) {
-            return new Promise((resolve) => {
-                canvas.toBlob((blob) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.readAsDataURL(blob);
-                }, 'image/jpeg', quality);
-            });
-        }
-
         // 显示预览
         function showPreview() {
             elements.previewImage.src = state.mergedImage;
@@ -815,18 +742,21 @@
         }
 
         // 关闭预览
-        function closePreview(e) {
-            e.stopPropagation();
+        function closePreview() {
             elements.previewModal.style.display = 'none';
             elements.saveGuide.classList.remove('active');
         }
 
         // 触发下载
         function triggerDownload() {
+            if (!state.mergedImage) return;
+            
             const link = document.createElement('a');
             link.download = `merged-image-${Date.now()}.jpg`;
             link.href = state.mergedImage;
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
         }
 
         function downloadImage() {
@@ -835,23 +765,9 @@
             }
         }
 
-        // 调整图片尺寸
-        function adjustImageSizes() {
-            const previews = elements.imagesPreview.querySelectorAll('.image-preview');
-            previews.forEach(preview => {
-                const img = preview.querySelector('img');
-                if (img.naturalWidth > img.naturalHeight) {
-                    preview.style.maxWidth = '180px';
-                } else {
-                    preview.style.maxWidth = '120px';
-                }
-            });
-        }
-
         // 初始化
         function init() {
             initEventListeners();
-            window.addEventListener('resize', adjustImageSizes);
             checkButtonState();
         }
 
